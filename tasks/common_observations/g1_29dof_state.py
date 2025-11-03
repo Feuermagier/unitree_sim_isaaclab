@@ -99,6 +99,13 @@ _obs_cache = {
     "dds_min_interval_ms": 20,
 }
 
+# IMU 加速度缓存：用于通过速度差分计算加速度
+# IMU acceleration cache: for computing acceleration via velocity differentiation
+_imu_acc_cache = {
+    "prev_vel": None,
+    "dt": 0.01,
+}
+
 def _get_g1_robot_dds_instance():
     """get the DDS instance, delay initialization"""
     global _g1_robot_dds, _dds_initialized
@@ -218,105 +225,116 @@ def get_robot_boy_joint_states(
     return combined_buf
 
 
-def get_gravity_quaternion_from_root_state(env: ManagerBasedRLEnv):
-    body_names = env.scene["robot"].data.body_names
-    imu_pelvis_idx = body_names.index("imu_in_pelvis")
-    imu_torso_idx = body_names.index("imu_in_torso")
-    print(f"imu_pelvis_idx: {imu_pelvis_idx}")
-    print(f"imu_torso_idx: {imu_torso_idx}")
-    pose = env.scene["robot"].data.body_link_pose_w  # [num_links, 7] (pos + quat)
-    vel = env.scene["robot"].data.body_link_vel_w    # [num_links, 6] (lin_vel + ang_vel)
+def quat_conjugate(q):
+    # q: [batch, 4] with order (w, x, y, z)
+    w = q[:, 0:1]
+    xyz = q[:, 1:4]
+    return torch.cat([w, -xyz], dim=1)
 
-    # 取出IMU位置+旋转
-    pelvis_pose = pose[:, imu_pelvis_idx, :]  # [B, 7]
-    torso_pose = pose[:, imu_torso_idx, :]
+def quat_rotate_vec(q, v):
+    # Rotate vector v (batch,3) by quaternion q (w,x,y,z)
+    # returns rotated vector (batch,3)
+    # Using: v' = q * (0, v) * q_conj
+    # q * r: quaternion multiplication
+    w = q[:, 0:1]
+    x = q[:, 1:2]
+    y = q[:, 2:3]
+    z = q[:, 3:4]
 
-    # 取出IMU线速度+角速度
-    pelvis_vel = vel[:, imu_pelvis_idx, :]    # [B, 6]
-    torso_vel = vel[:, imu_torso_idx, :]
-    return pelvis_pose, pelvis_vel, torso_pose, torso_vel
+    # compute q * (0, v)
+    vx = v[:, 0:1]
+    vy = v[:, 1:2]
+    vz = v[:, 2:3]
 
-def get_robot_imu_data(
-    env: ManagerBasedRLEnv,
-) -> torch.Tensor:
-    """get the robot IMU data
-    
-    Args:
-        env: ManagerBasedRLEnv - reinforcement learning environment instance
-    
-    Returns:
-        torch.Tensor
-        - the first 3 elements are position
-        - the next 4 elements are rotation quaternion
-        - the next 3 elements are linear velocity
-        - the last 3 elements are angular velocity
+    # quaternion multiply q * r where r = (0, v)
+    rw_w = - (x*vx + y*vy + z*vz)
+    rw_x =   w*vx + y*vz - z*vy
+    rw_y =   w*vy + z*vx - x*vz
+    rw_z =   w*vz + x*vy - y*vx
+
+    # multiply result by q_conj: (rw) * q_conj
+    # q_conj = (w, -x, -y, -z)
+    out_x = rw_w * (-x) + rw_x * w + rw_y * (-z) - rw_z * (-y)
+    out_y = rw_w * (-y) + rw_y * w + rw_z * (-x) - rw_x * (-z)
+    out_z = rw_w * (-z) + rw_z * w + rw_x * (-y) - rw_y * (-x)
+
+    return torch.cat([out_x, out_y, out_z], dim=1)
+
+def get_robot_imu_data(env, use_torso_imu: bool = True) -> torch.Tensor:
+    """Corrected IMU: returns position (world), quaternion (w,x,y,z), accelerometer (in IMU/body frame), gyro (in body frame)
     """
-    # get the robot root state
-    root_state = env.scene["robot"].data.root_state_w
-    # print(env.scene["robot"].data.__dict__.keys())
-    # pelvis_pose, pelvis_vel, torso_pose, torso_vel = get_gravity_quaternion_from_root_state(env)
-    # print(f"pelvis_pose: {pelvis_pose}")
-    # print(f"pelvis_vel: {pelvis_vel}")
-    # print(f"torso_pose: {torso_pose}")
-    # print(f"torso_vel: {torso_vel}")
-    # extract the position, rotation, velocity and angular velocity
-    pos = root_state[:, :3]  # position
-    quat = root_state[:, 3:7]  # rotation quaternion
-    vel = root_state[:, 7:10]  # linear velocity
-    ang_vel = root_state[:, 10:13]  # angular velocity
-    # pos = torso_pose[:, :3]
-    # quat = torso_pose[:, 3:7]
-    # vel = torso_vel[:, :3]
-    # ang_vel = torso_vel[:, 3:6]
-    # qu = get_gravity_quaternion(env)
-    # print(f"qu: {qu}")
-    # print(f"quat: {quat}")
-    # concatenate all data
-    imu_data = torch.cat([pos, quat, vel, ang_vel], dim=1)
-    
+    data = env.scene["robot"].data
+    global _imu_acc_cache
+
+    # --- dt ---
+    dt = _imu_acc_cache["dt"]
+    try:
+        if hasattr(env, 'physics_dt'):
+            dt = float(env.physics_dt)
+        elif hasattr(env, 'step_dt'):
+            dt = float(env.step_dt)
+        elif hasattr(env, 'dt'):
+            dt = float(env.dt)
+    except Exception:
+        pass
+    if dt <= 0:
+        dt = _imu_acc_cache["dt"]
+
+    # --- extract pose & vel ---
+    if use_torso_imu:
+        try:
+            body_names = data.body_names
+            imu_torso_idx = body_names.index("imu_in_torso")
+            body_pose = data.body_link_pose_w  # [batch, num_links, 7]
+            body_vel = data.body_link_vel_w    # [batch, num_links, 6]
+            pos = body_pose[:, imu_torso_idx, :3]
+            quat = body_pose[:, imu_torso_idx, 3:7]  
+            lin_vel = body_vel[:, imu_torso_idx, :3]
+            ang_vel = body_vel[:, imu_torso_idx, 3:6]
+        except ValueError:
+            use_torso_imu = False
+
+    if not use_torso_imu:
+        root_state = data.root_state_w  # [batch, 13]
+        pos = root_state[:, :3]
+        quat = root_state[:, 3:7]      
+        lin_vel = root_state[:, 7:10]
+        ang_vel = root_state[:, 10:13]
+
+    # ensure tensors on same device
+    device = lin_vel.device if isinstance(lin_vel, torch.Tensor) else torch.device('cpu')
+    if _imu_acc_cache["prev_vel"] is None:
+        _imu_acc_cache["prev_vel"] = torch.zeros_like(lin_vel).to(device)
+    else:
+        if _imu_acc_cache["prev_vel"].device != device:
+            _imu_acc_cache["prev_vel"] = _imu_acc_cache["prev_vel"].to(device)
+
+    # --- compute a_world = dv/dt ---
+    a_world = (lin_vel - _imu_acc_cache["prev_vel"]) / dt
+
+    # gravity in world frame; assume world z-up and gravity vector points down
+    g_world = torch.zeros_like(a_world)
+    g_world[:, 2] = -9.81  # [0,0,-9.81]
+
+    # proper acceleration in world frame (subtract gravity)
+    a_world_corrected = a_world - g_world  # = a_world - g
+
+    # rotate to IMU/body frame: a_body = R^T * a_world_corrected
+    # which is equivalent to rotating the vector by quaternion conjugate
+    # assumes quat format (w,x,y,z)
+    a_body = quat_rotate_vec(quat, a_world_corrected)  # since quat_rotate_vec(q, v) computes q * (0,v) * q_conj
+    # Note: the above rotates v from world->body only if quat represents rotation from body->world.
+    # If quat is world->body, skip conjugation - check API's quaternion convention.
+
+    # On first frame (no meaningful dv/dt), _imu_acc_cache["prev_vel"] was zeros so a_world large; optionally handle first-frame:
+    # You may prefer to set a_body to -R^T(g_world) when prev_vel uninitialized:
+    # But here we already used zeros prev_vel; if you want first-frame stable:
+    # if torch.allclose(_imu_acc_cache["prev_vel"], torch.zeros_like(_imu_acc_cache["prev_vel"])):
+    #     a_body = quat_rotate_vec(quat, -g_world)
+
+    # Update cache
+    _imu_acc_cache["prev_vel"] = lin_vel.clone().detach()
+    _imu_acc_cache["dt"] = dt
+
+    imu_data = torch.cat([pos, quat, a_body, ang_vel], dim=1)
     return imu_data
-
-
-
-# def get_robot_imu_data(env):
-#     data = env.scene["robot"].data
-
-#     # quaternion from root_state_w
-#     root_state = data._root_state_w  # [B, 13]: [pos(3), quat(4), vel(3), ang_vel(3)]
-#     quaternion = root_state[:, 3:7]
-
-#     # gyroscope from root_state_w angular velocity
-#     gyroscope = root_state[:, 10:13]
-
-#     # accelerometer: root COM acceleration
-#     accelerometer = data._root_com_acc_w[:, :3]  # [B, 3]
-
-#     # convert quaternion to RPY (Roll, Pitch, Yaw)
-#     rpy = quaternion_to_rpy(quaternion)
-
-#     return {
-#         "quaternion": quaternion,
-#         "gyroscope": gyroscope,
-#         "accelerometer": accelerometer,
-#         "rpy": rpy
-#     }
-
-def quaternion_to_rpy(quat: torch.Tensor) -> torch.Tensor:
-    """
-    Convert quaternion (w, x, y, z) to roll, pitch, yaw (radians).
-    """
-    w, x, y, z = quat[:, 0], quat[:, 1], quat[:, 2], quat[:, 3]
-
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + y * y)
-    roll = torch.atan2(t0, t1)
-
-    t2 = +2.0 * (w * y - z * x)
-    t2 = torch.clamp(t2, -1.0, 1.0)
-    pitch = torch.asin(t2)
-
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (y * y + z * z)
-    yaw = torch.atan2(t3, t4)
-
-    return torch.stack([roll, pitch, yaw], dim=1)
