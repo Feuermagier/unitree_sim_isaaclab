@@ -5,7 +5,7 @@ import tempfile
 import torch
 from dataclasses import MISSING
 
-from pink.tasks import FrameTask
+# from pink.tasks import FrameTask
 
 import isaaclab.envs.mdp as base_mdp
 from isaaclab.envs import ManagerBasedRLEnvCfg

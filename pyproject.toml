@@ -1,0 +1,31 @@
+[project]
+name = "unitree-sim-isaaclab"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "gymnasium>=1.2.0",
+    "isaaclab[all,isaacsim]>=2.2.0",
+    "isaacsim[all,extscache]==5.0.0",
+    "logging-mp==0.1.5",
+    "onnx>=1.20.1",
+    "onnxruntime==1.22.1",
+    "pynput==1.8.1",
+    "pyzmq==27.0.0",
+    "rerun-sdk==0.20.1",
+    "teleimager[server]",
+    "unitree-sdk2py"
+]
+
+[project.scripts]
+unitree-sim-isaaclab = "unitree_sim_isaaclab:main"
+
+[tool.uv.sources]
+unitree-sdk2py = { git = "https://github.com/Feuermagier/unitree_sdk2_python", rev = "51521d528f561e4adfb4460667609c4d21e2381e" }
+teleimager = { git = "https://github.com/unitreerobotics/teleimager", rev = "c77e5962899b96e0f36345c0baf74b1ea2d32347"}
+isaacsim = { index = "nvidia" }
+isaaclab = { index = "nvidia" }
+
+[[tool.uv.index]]
+name = "nvidia"
+url = "https://pypi.nvidia.com"
+explicit = true

@@ -16,11 +16,13 @@ import signal
 import torch
 import gymnasium as gym
 from pathlib import Path
+import logging
+import logging_mp
 
 # Isaac Lab AppLauncher
 from isaaclab.app import AppLauncher
 
-from teleimager.image_server import run_isaacsim_server
+from teleimager import image_server as teleimager
 from dds.dds_create import create_dds_objects,create_dds_objects_replay
 # add command line arguments
 parser = argparse.ArgumentParser(description="Unitree Simulation")
@@ -90,7 +92,7 @@ if args_cli.enable_dex3_dds and args_cli.enable_dex1_dds and args_cli.enable_ins
     sys.exit(1)
 
 
-import pinocchio                 
+# import pinocchio                 
 app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
@@ -369,11 +371,14 @@ def main():
         return
     
     # create controller
+    logging.basicConfig(level=logging.INFO)
+    logging_mp.basic_config(level=logging_mp.INFO)
 
     if not args_cli.replay_data:
         print("========= create image server =========")
         try:
-            image_server = run_isaacsim_server()
+            teleimager.CONFIG_PATH = "cam_config_server.yaml"
+            image_server = teleimager.run_isaacsim_server()
         except Exception as e:
             print(f"Failed to create image server: {e}")
             return

@@ -1,3 +1,26 @@
+# About this fork
+This is a fork of Unitree's [unitree_sim_isaaclab](https://github.com/unitreerobotics/unitree_sim_isaaclab).
+It adds support for uv-based installation, removes the dependencies on pinocchio and pink (which are unused anyway), and makes the `teleimager` a regular dependency instead of a git submodule.
+
+With this fork, you **don't need to have isaac(sim/lab) natively installed**.
+Assuming that you have cyclonedds installed to `~/cyclonedds/install`, simply run
+```
+CYCLONEDDS_HOME="~/cyclonedds/install" uv sync
+```
+To download assets, you also need to run
+```
+./fetch_assets.sh
+```
+
+You can then run a G1 example scene with
+```
+uv run sim_main.py --device cpu --enable_cameras --task Isaac-PickPlace-Cylinder-G129-Dex1-Joint    --enable_dex1_dds --robot_type g129
+```
+Just click into the scene viewer once to start the simulation.
+DDS topics will be published with channel id 1, and camera images are published to ZMQ according to [cam_config_server.yaml](cam_config_server.yaml).
+
+# Original README below
+
 <div align="center">
   <h1 align="center"> unitree_sim_isaaclab </h1>
   <h3 align="center"> Unitree Robotics </h3>
