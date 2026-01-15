@@ -12,7 +12,7 @@ class DDSActionProvider(ActionProvider):
         self.enable_robot = args_cli.robot_type
         self.enable_gripper = args_cli.enable_dex1_dds
         self.enable_dex3 = args_cli.enable_dex3_dds
-        self.enable_inspire = args_cli.enable_inspire_dds
+        self.enable_inspire = args_cli.enable_inspire_dds or args_cli.enable_inspire_ftp_dds
         self.env = env
         # Initialize DDS communication
         self.robot_dds = None

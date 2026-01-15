@@ -29,6 +29,12 @@ def create_dds_objects(args_cli,env):
         dds_manager.register_object("inspire", inspire)
         publish_names.append("inspire")
         subscribe_names.append("inspire")
+    elif args_cli.enable_inspire_ftp_dds:
+        from dds.inspire_dds_ftp import InspireDDS
+        inspire = InspireDDS()
+        dds_manager.register_object("inspire", inspire)
+        publish_names.append("inspire")
+        subscribe_names.append("inspire")
     if "Wholebody" in args_cli.task or args_cli.enable_wholebody_dds:
         from dds.commands_dds import RunCommandDDS
         run_command_dds = RunCommandDDS()

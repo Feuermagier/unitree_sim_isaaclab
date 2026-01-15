@@ -26,7 +26,7 @@ head_camera:
   # Image Format
   # image resolution: [height, width]
   image_shape: [480, 1280]
-  binocular: true
+  binocular: false
   # frame per second
   fps: 30
 

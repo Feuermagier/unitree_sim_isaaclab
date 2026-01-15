@@ -93,6 +93,7 @@ class InspireDDS(DDSObject):
                 positions = data["positions"]
                 velocities = data["velocities"]
                 torques = data["torques"]
+                print(len(positions), positions)
                 for i in range(min(12, len(positions))):
                     if i < len(self.inspire_hand_state.states):
                         # convert the Isaac Lab joint angle to the gripper control value    
