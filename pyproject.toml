@@ -25,6 +25,9 @@ teleimager = { git = "https://github.com/unitreerobotics/teleimager", rev = "c77
 isaacsim = { index = "nvidia" }
 isaaclab = { index = "nvidia" }
 
+[tool.uv.extra-build-dependencies]
+flatdict = ["setuptools<80"]
+
 [[tool.uv.index]]
 name = "nvidia"
 url = "https://pypi.nvidia.com"

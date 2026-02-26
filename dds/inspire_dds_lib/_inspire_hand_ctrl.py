@@ -27,4 +27,4 @@ class inspire_hand_ctrl(idl.IdlStruct, typename="inspire.inspire_hand_ctrl"):
     force_set: types.sequence[types.int16, 6]
     speed_set: types.sequence[types.int16, 6]
     mode: types.int8
-    calibrate_force: types.int8
+    special_cmd: types.int8
