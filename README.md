@@ -12,9 +12,18 @@ To download assets, you also need to run
 ./fetch_assets.sh
 ```
 
-You can then run a G1 example scene with
+You can then run a G1 example scene with 3-finger Dex hands with
 ```
-uv run sim_main.py --device cpu --enable_cameras --task Isaac-PickPlace-Cylinder-G129-Dex1-Joint    --enable_dex1_dds --robot_type g129
+uv run sim_main.py --device cpu --enable_cameras --task Isaac-PickPlace-Cylinder-G129-Dex1-Joint --enable_dex1_dds --robot_type g129
+```
+
+or an G1 example scene with Inspire-FTP hands with
+```
+uv run sim_main.py --device cpu --enable_cameras --task Isaac-PickPlace-Cylinder-G129-Inspire-Joint --enable_inspire_ftp_dds --robot_type g129
+```
+or an H1 example scene with Inspire (non-FTP) hands with
+```
+uv run sim_main.py --device cpu --enable_cameras --task Isaac-PickPlace-Cylinder-H12-27dof-Inspire-Joint --enable_inspire_dds --robot_type h1_2
 ```
 Just click into the scene viewer once to start the simulation.
 DDS topics will be published with channel id 1, and camera images are published to ZMQ according to [cam_config_server.yaml](cam_config_server.yaml).
