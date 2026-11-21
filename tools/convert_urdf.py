@@ -34,15 +34,15 @@ from isaaclab.app import AppLauncher
 
 # 添加命令行参数解析
 parser = argparse.ArgumentParser(description="URDF转USD格式的工具")
-# parser.add_argument("input", type=str, default="/home/unitree/newDisk/URDF/urdf-to-usd/g1withdex1/g1_29dof_with_dex1_rev_1_0.urdf", help="输入URDF文件的路径")
-# parser.add_argument("output", type=str, default="/home/unitree/Code/isaaclab_demo/usd/g1_body29_hand14.usd", help="输出USD文件的路径")
+parser.add_argument("input", type=str, default="/home/unitree/newDisk/URDF/urdf-to-usd/g1withdex1/g1_29dof_with_dex1_rev_1_0.urdf", help="输入URDF文件的路径")
+parser.add_argument("output", type=str, default="/home/unitree/Code/isaaclab_demo/usd/g1_body29_hand14.usd", help="输出USD文件的路径")
 parser.add_argument(
     "--merge-joints",
     action="store_true",
     default=False,
     help="合并由固定关节连接的链接",
 )
-parser.add_argument("--fix-base", action="store_true", default=True, help="将基座固定在导入位置")
+parser.add_argument("--fix-base", action="store_true", default=False, help="将基座固定在导入位置")
 parser.add_argument(
     "--joint-stiffness",
     type=float,
@@ -88,7 +88,7 @@ from isaaclab.utils.dict import print_dict
 
 def main():
     # 检查输入文件路径是否有效
-    urdf_path = "/home/unitree/newDisk/URDF/urdf-to-usd/h1_2_inspire/h1_2.urdf" #args_cli.input
+    urdf_path = args_cli.input
     print(urdf_path)
     if not os.path.isabs(urdf_path):
         urdf_path = os.path.abspath(urdf_path)
@@ -96,7 +96,7 @@ def main():
         raise ValueError(f"无效的文件路径: {urdf_path}")
     
     # 创建输出文件路径
-    dest_path = "/home/unitree/newDisk/URDF/urdf-to-usd/h1_2_inspire/h1_2.urdf.usd"
+    dest_path = args_cli.output
     if not os.path.isabs(dest_path):
         dest_path = os.path.abspath(dest_path)
 

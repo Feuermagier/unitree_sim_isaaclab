@@ -17,6 +17,12 @@ def create_dds_objects(args_cli,env):
         dds_manager.register_object("dex3", dex3)
         publish_names.append("dex3")
         subscribe_names.append("dex3")
+    elif args_cli.enable_dex5_dds:
+        from dds.dex5_dds import Dex5DDS
+        dex5 = Dex5DDS() 
+        dds_manager.register_object("dex5", dex5)
+        publish_names.append("dex5")
+        subscribe_names.append("dex5")
     elif args_cli.enable_dex1_dds:
         from dds.gripper_dds import GripperDDS
         gripper = GripperDDS()
@@ -73,6 +79,12 @@ def create_dds_objects_replay(args_cli,env):
         dds_manager.register_object("dex3", dex3)
         publish_names.append("dex3")
         subscribe_names.append("dex3")
+    elif args_cli.enable_dex5_dds:
+        from dds.dex5_dds import Dex5DDS
+        dex5 = Dex5DDS() 
+        dds_manager.register_object("dex5", dex5)
+        publish_names.append("dex5")
+        subscribe_names.append("dex5")
     elif args_cli.enable_dex1_dds:
         from dds.gripper_dds import GripperDDS
         gripper = GripperDDS()

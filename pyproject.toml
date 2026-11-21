@@ -32,7 +32,7 @@ required-environments = [
 unitree-sim-isaaclab = "unitree_sim_isaaclab:main"
 
 [tool.uv.sources]
-unitree-sdk2py = { git = "https://github.com/Feuermagier/unitree_sdk2_python", rev = "51521d528f561e4adfb4460667609c4d21e2381e" }
+unitree-sdk2py =  {path = "../unitree_sdk2_python", editable = true} # { git = "https://github.com/Feuermagier/unitree_sdk2_python", rev = "51521d528f561e4adfb4460667609c4d21e2381e" }
 teleimager = { git = "https://github.com/unitreerobotics/teleimager", rev = "c77e5962899b96e0f36345c0baf74b1ea2d32347"}
 isaacsim = { index = "nvidia" }
 isaaclab = { index = "nvidia" }

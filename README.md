@@ -1,6 +1,7 @@
 # About this fork
 This is a fork of Unitree's [unitree_sim_isaaclab](https://github.com/unitreerobotics/unitree_sim_isaaclab).
 It adds support for uv-based installation, removes the dependencies on pinocchio and pink (which are unused anyway), and makes the `teleimager` a regular dependency instead of a git submodule.
+There are also several bug fixes to the H1-2 representation and some DDS modules for the unitree robots and the inspire hands.
 
 With this fork, you **don't need to have isaac(sim/lab) natively installed**.
 Assuming that you have cyclonedds installed to `~/cyclonedds/install`, simply run

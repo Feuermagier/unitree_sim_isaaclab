@@ -8,7 +8,7 @@ support different robot variants: with/without waist joint, different finger con
 
 from isaaclab.assets import ArticulationCfg
 from isaaclab.utils import configclass
-from robots.unitree import G129_CFG_WITH_DEX1_BASE_FIX,G129_CFG_WITH_DEX3_BASE_FIX,G129_CFG_WITH_INSPIRE_HAND,G129_CFG_WITH_DEX1_WHOLEBODY,G129_CFG_WITH_DEX3_WHOLEBODY,G129_CFG_WITH_INSPIRE_WHOLEBODY,H12_CFG_WITH_INSPIRE_HAND
+from robots.unitree import G129_CFG_WITH_DEX1_BASE_FIX,G129_CFG_WITH_DEX3_BASE_FIX,G129_CFG_WITH_INSPIRE_HAND,G129_CFG_WITH_DEX1_WHOLEBODY,G129_CFG_WITH_DEX3_WHOLEBODY,G129_CFG_WITH_INSPIRE_WHOLEBODY,H12_CFG_WITH_INSPIRE_HAND, H12_CFG_WITH_INSPIRE_HAND_FREE, H12_CFG_WITH_DEX5_HAND_FREE, H12_CFG_WITH_DEX5_HAND
 from typing import Optional, Dict, Tuple, Literal
 
 
@@ -83,7 +83,7 @@ class RobotJointTemplates:
         }
     
     @classmethod
-    def get_hand_joints(cls, hand_type: Literal["gripper", "dex3","inspire"] = "gripper") -> Dict[str, float]:
+    def get_hand_joints(cls, hand_type: Literal["gripper", "dex3","inspire", "dex5"] = "gripper") -> Dict[str, float]:
         """get the default position of the hand joints
         
         Args:
@@ -121,6 +121,51 @@ class RobotJointTemplates:
                 "right_hand_middle_1_joint": 0.0,
                 "right_hand_thumb_1_joint": 0.0,
                 "right_hand_thumb_2_joint": 0.0,
+            }
+        elif hand_type == "dex5":
+            return {
+                "Roll_21L": 0.0,
+                "Pitch_22L": 0.0,
+                "Pitch_23L": 0.0,
+                "Pitch_24L": 0.0,
+                "Roll_31L": 0.0,
+                "Pitch_32L": 0.0,
+                "Pitch_33L": 0.0,
+                "Pitch_34L": 0.0,
+                "Roll_41L": 0.0,
+                "Pitch_42L": 0.0,
+                "Pitch_43L": 0.0,
+                "Pitch_44L": 0.0,
+                "Roll_51L": 0.0,
+                "Pitch_52L": 0.0,
+                "Pitch_53L": 0.0,
+                "Pitch_54L": 0.0,
+                "Yaw_11L": 0.0,
+                "Roll_12L": 0.0,
+                "Pitch_13L": 0.0,
+                "Pitch_14L": 0.0,
+    
+    
+                "Roll_21R": 0.0,
+                "Pitch_22R": 0.0,
+                "Pitch_23R": 0.0,
+                "Pitch_24R": 0.0,
+                "Roll_31R": 0.0,
+                "Pitch_32R": 0.0,
+                "Pitch_33R": 0.0,
+                "Pitch_34R": 0.0,
+                "Roll_41R": 0.0,
+                "Pitch_42R": 0.0,
+                "Pitch_43R": 0.0,
+                "Pitch_44R": 0.0,
+                "Roll_51R": 0.0,
+                "Pitch_52R": 0.0,
+                "Pitch_53R": 0.0,
+                "Pitch_54R": 0.0,
+                "Yaw_11R": 0.0,
+                "Roll_12R": 0.0,
+                "Pitch_13R": 0.0,
+                "Pitch_14R": 0.0,
             }
         elif hand_type == "inspire":
             return {
@@ -174,7 +219,7 @@ class RobotBaseCfg:
         init_pos: Tuple[float, float, float] = (-0.15, 0.0, 0.744),
         init_rot: Tuple[float, float, float, float] = (0.7071, 0, 0, 0.7071),
         include_waist: bool = True,
-        hand_type: Literal["gripper", "dex3", "inspire"] = "gripper",
+        hand_type: Literal["gripper", "dex3", "inspire", "dex5"] = "gripper",
         base_config = None,
         custom_joint_pos: Optional[Dict[str, float]] = None,
         is_have_hand: bool = True,
@@ -211,6 +256,10 @@ class RobotBaseCfg:
             # add the waist joints (if enabled)
             if robot_type == "g129dof":
                 default_joint_pos.update(RobotJointTemplates.get_waist_joints(include_waist))
+
+            # Add waist for H1-2. Hardcoded since all functionality only focuses on G1
+            elif robot_type == "h1_2" and include_waist:
+                default_joint_pos.update({"torso_joint": 0.0})
             
             # add the arm joints
             default_joint_pos.update(RobotJointTemplates.get_arm_joints())
@@ -330,8 +379,46 @@ class H12RobotPresets:
         return RobotBaseCfg.get_base_config(
             init_pos=init_pos,
             init_rot=init_rot,
-            include_waist=False,
+            include_waist=True,
             hand_type="inspire",
             base_config=H12_CFG_WITH_INSPIRE_HAND,
             robot_type="h1_2"
+        )
+    
+    @classmethod
+    def h12_27dof_inspire_float(cls,init_pos: Tuple[float, float, float] = (-0.15, -0.8, 1.1),
+        init_rot: Tuple[float, float, float, float] = (0.7071, 0, 0, 0.7071)) -> ArticulationCfg:   
+        return RobotBaseCfg.get_base_config(
+            init_pos=init_pos,
+            init_rot=init_rot,
+            include_waist=True,
+            hand_type="inspire",
+            base_config=H12_CFG_WITH_INSPIRE_HAND_FREE,
+            robot_type="h1_2",
+            update_default_joint_pos=False
+        )
+    @classmethod
+    def h12_27dof_dex5_float(cls,init_pos: Tuple[float, float, float] = (-0.15, -0.8, 1.1),
+        init_rot: Tuple[float, float, float, float] = (0.7071, 0, 0, 0.7071)) -> ArticulationCfg:   
+        return RobotBaseCfg.get_base_config(
+            init_pos=init_pos,
+            init_rot=init_rot,
+            include_waist=True,
+            hand_type="dex5",
+            base_config=H12_CFG_WITH_DEX5_HAND_FREE,
+            robot_type="h1_2",
+            update_default_joint_pos=False
+        )
+
+    @classmethod
+    def h12_27dof_dex5_base_fix(cls,init_pos: Tuple[float, float, float] = (-0.15, 0.0, 0.76),
+        init_rot: Tuple[float, float, float, float] = (0.7071, 0, 0, 0.7071)) -> ArticulationCfg:   
+        return RobotBaseCfg.get_base_config(
+            init_pos=init_pos,
+            init_rot=init_rot,
+            include_waist=True,
+            hand_type="dex5",
+            base_config=H12_CFG_WITH_DEX5_HAND,
+            robot_type="h1_2",
+            custom_joint_pos={"right_hip_roll_joint": -0.8507781028747559,"right_ankle_roll_joint": -0.26,"left_hip_roll_joint": 0.8507781028747559,"left_ankle_roll_joint": -0.26,}
         )

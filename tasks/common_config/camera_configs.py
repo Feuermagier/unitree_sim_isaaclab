@@ -86,11 +86,11 @@ class CameraPresets:
     @classmethod
     def g1_front_camera(cls) -> CameraCfg:
         """front camera configuration"""
-        return CameraBaseCfg.get_camera_config()
+        return CameraBaseCfg.get_camera_config(width=640)
     @classmethod
     def h12_front_camera(cls) -> CameraCfg:
         """front camera configuration"""
-        return CameraBaseCfg.get_camera_config(prim_path = "/World/envs/env_.*/Robot/camera_link/front_cam")
+        return CameraBaseCfg.get_camera_config(prim_path = "/World/envs/env_.*/Robot/camera_link/front_cam", width=640)
     @classmethod
     def g1_world_camera(cls) -> CameraCfg:
         """front camera configuration"""
@@ -193,6 +193,39 @@ class CameraPresets:
         """right wrist camera configuration"""
         return CameraBaseCfg.get_camera_config(
             prim_path="/World/envs/env_.*/Robot/right_hand_camera_base_link/right_wrist_camera",
+            height=480,
+            width=640,
+            update_period=0.02,
+            data_types=["rgb"],
+            focal_length=12.0,
+            focus_distance=400.0,
+            horizontal_aperture=20.0,
+            clipping_range=(0.1, 1.0e5),
+            pos_offset=(-0.04012, 0.07441 ,0.15711),
+            rot_offset=(0.00539,0.86024,0.0424, 0.50809),
+        ) 
+
+    @classmethod
+    def left_dex5_wrist_camera(cls) -> CameraCfg:
+        """left wrist camera configuration"""
+        return CameraBaseCfg.get_camera_config(
+            prim_path="/World/envs/env_.*/Robot/base_link00L/left_wrist_camera",
+            height=480,
+            width=640,
+            update_period=0.02,
+            data_types=["rgb"],
+            focal_length=12.0,
+            focus_distance=400.0,
+            horizontal_aperture=20.0,
+            clipping_range=(0.1, 1.0e5),
+            pos_offset=(-0.04012, -0.07441 ,0.15711),
+            rot_offset=(0.00539,0.86024,0.0424, 0.50809),
+        )
+    @classmethod
+    def right_dex5_wrist_camera(cls) -> CameraCfg:
+        """right wrist camera configuration"""
+        return CameraBaseCfg.get_camera_config(
+            prim_path="/World/envs/env_.*/Robot/base_link00/right_wrist_camera",
             height=480,
             width=640,
             update_period=0.02,

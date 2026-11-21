@@ -130,20 +130,20 @@ class InspireDDS(DDSObject):
                     else:
                         q = self.normalize(float(positions[i]), -0.1, 1.3)
 
-                    self.msg_left.angle_act[i] = int(q * 1000)
-                self.left_publisher.Write(self.msg_left)
+                    self.msg_right.angle_act[i] = int(q * 1000)
+                self.right_publisher.Write(self.msg_right)
 
                 for i in range(6, 12):
-                    if i < 10:
+                    if i < 9:
                         q = self.normalize(float(positions[i]), 0.0, 1.7)
-                    elif i == 11:
+                    elif i == 10:
                         q = self.normalize(float(positions[i]), 0.0, 0.5)
                     else:
                         q = self.normalize(float(positions[i]), -0.1, 1.3)
 
                     self.msg_left.angle_act[i - 6] = int(q * 1000)
 
-                self.right_publisher.Write(self.msg_right)
+                self.left_publisher.Write(self.msg_left)
 
         except Exception as e:
             print(f"inspire_dds [{self.node_name}] Error processing publish data: {e}")
@@ -155,7 +155,8 @@ class InspireDDS(DDSObject):
     def dds_subscriber(self, msg: inspire_hand_ctrl, right: bool, datatype: str = None):
         """Process the subscribe data: convert the DDS command to the Isaac Lab format"""
         try:
-            offset = 6 if right else 0
+            # here the left hand occupies the indices 6 to 11
+            offset = 0 if right else 6
 
             for i in range(6):
                 if i < 4:

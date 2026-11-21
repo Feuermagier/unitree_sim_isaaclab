@@ -35,6 +35,8 @@ def get_robot_boy_joint_names() -> list[str]:
         "right_knee_joint",
         "right_ankle_pitch_joint",
         "right_ankle_roll_joint",
+        # waist (1)
+        "torso_joint",
         # arm joints (14)
         # left arm (7)
         "left_shoulder_pitch_joint",
@@ -110,7 +112,7 @@ def _get_g1_robot_dds_instance():
             from dds.dds_master import dds_manager
             print(f"dds_manager: {dds_manager}")
             _g1_robot_dds = dds_manager.get_object("g129")
-            print("[g1_state] G1 robot DDS communication instance obtained")
+            print("[h1_2_state] H1-2 robot DDS communication instance obtained")
             
             # register the cleanup function
             import atexit
@@ -118,13 +120,13 @@ def _get_g1_robot_dds_instance():
                 try:
                     if _g1_robot_dds:
                         dds_manager.unregister_object("g129")
-                        print("[g1_state] DDS communication closed correctly")
+                        print("[h1_2_state] DDS communication closed correctly")
                 except Exception as e:
-                    print(f"[g1_state] Error closing DDS: {e}")
+                    print(f"[h1_2_state] Error closing DDS: {e}")
             atexit.register(cleanup_dds)
             
         except Exception as e:
-            print(f"[g1_state] Failed to get G1 robot DDS instance: {e}")
+            print(f"[h1_2_state] Failed to get G1 robot DDS instance: {e}")
             _g1_robot_dds = None
         
         _dds_initialized = True
@@ -163,7 +165,8 @@ def get_robot_boy_joint_states(
     # 预计算并缓存索引张量（列索引）
     global _obs_cache
     if _obs_cache["device"] != device or _obs_cache["boy_idx_t"] is None:
-        boy_joint_indices = [3, 7, 0, 11, 15, 19, 4, 8, 1, 12, 16, 20, 5, 9, 13, 17, 21, 23, 25, 6, 10, 14, 18, 22, 24, 26]
+        # Added '2' at position (index) 12, which is the index of the torso joint
+        boy_joint_indices = [3, 7, 0, 11, 15, 19, 4, 8, 1, 12, 16, 20, 2, 5, 9, 13, 17, 21, 23, 25, 6, 10, 14, 18, 22, 24, 26]
 #[0, 3, 6, 9, 13, 17, 1, 4, 7, 10, 14, 18, 2, 5, 8, 11, 15, 19, 21, 23, 25, 27, 12, 16, 20, 22, 24, 26, 28]
         _obs_cache["boy_idx_t"] = torch.tensor(boy_joint_indices, dtype=torch.long, device=device)
         _obs_cache["device"] = device
